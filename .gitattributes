@@ -1,0 +1,13 @@
+# Normalise text in the repo, leave the working copy to core.autocrlf.
+* text=auto
+
+# Never touch these - a line-ending rewrite would corrupt them.
+*.apk   binary
+*.jar   binary
+*.png   binary
+*.jks   binary
+*.keystore binary
+
+# The Gradle wrapper script must keep LF to run on Linux and macOS.
+gradlew text eol=lf
+*.sh    text eol=lf

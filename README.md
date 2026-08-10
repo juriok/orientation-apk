@@ -145,13 +145,22 @@ Two safeguards sit behind that number:
 
 ## Building
 
-Requires JDK 17 and the Android SDK (platform 35, build-tools 35.0.0).
+Requires JDK 17 and the Android SDK (platform 35, build-tools 35.0.0). The Gradle wrapper
+is committed, so Gradle itself does not need to be installed.
 
 ```bash
-gradle assembleDebug
+./gradlew assembleDebug
 ```
 
 The APK lands in `app/build/outputs/apk/debug/`.
+
+If the build fails with *"Dependency requires at least JVM runtime version 11. This build
+uses a Java 8 JVM"*, an old system Java is first on `PATH`. Point `JAVA_HOME` at JDK 17 for
+the build:
+
+```bash
+JAVA_HOME=/path/to/jdk-17 ./gradlew assembleDebug
+```
 
 For a release build, create `keystore.properties` in the project root:
 
