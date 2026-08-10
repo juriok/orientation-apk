@@ -1,0 +1,9 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="30dp" android:height="30dp"
+    android:viewportWidth="30" android:viewportHeight="30">
+    <!-- Orienteering control circle. White halo first so it survives dark map backgrounds. -->
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="6" android:fillColor="#00000000"
+        android:pathData="M15,5 a10,10 0 1,0 0.1,0 Z" />
+    <path android:strokeColor="#FF6A1B9A" android:strokeWidth="3" android:fillColor="#00000000"
+        android:pathData="M15,5 a10,10 0 1,0 0.1,0 Z" />
+</vector>

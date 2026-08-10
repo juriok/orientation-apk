@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Orientacija</string>
+
+    <string name="custom_maps">Lastne karte</string>
+    <string name="calibrate">Umerjanje</string>
+    <string name="waypoints">Točke</string>
+    <string name="layers">Sloji</string>
+    <string name="menu">Meni</string>
+    <string name="offline">Brez povezave</string>
+
+    <string name="my_location">Moja lokacija</string>
+    <string name="add_waypoint">Dodaj točko</string>
+    <string name="north_lock">Sever navzgor</string>
+
+    <string name="take_photo">Fotografiraj karto</string>
+    <string name="import_image">Uvozi sliko</string>
+    <string name="import_gpx">Uvozi GPX</string>
+    <string name="export_gpx">Izvozi GPX</string>
+
+    <string name="cal_step_image">1. Tapni točko na sliki</string>
+    <string name="cal_step_map">2. Tapni isto točko na karti</string>
+    <string name="cal_add_pair">Dodaj par</string>
+    <string name="cal_undo">Razveljavi</string>
+    <string name="cal_save">Shrani</string>
+    <string name="cal_preview">Predogled</string>
+
+    <string name="opacity">Prosojnost</string>
+    <string name="delete">Izbriši</string>
+    <string name="cancel">Prekliči</string>
+    <string name="ok">V redu</string>
+
+    <string name="loc_permission_rationale">Za prikaz vaše lokacije na karti aplikacija potrebuje dostop do lokacije.</string>
+    <string name="dash">—</string>
+
+    <string name="tracks">Sledi</string>
+    <string name="courses">Proge</string>
+    <string name="new_course">Nova proga</string>
+    <string name="start_course">Začni progo</string>
+    <string name="stop_course">Končaj progo</string>
+    <string name="punch_radius">Polmer odčitka</string>
+    <string name="rename">Preimenuj</string>
+    <string name="delete_all">Izbriši vse</string>
+    <string name="export_all_gpx">Izvozi vse (GPX)</string>
+    <string name="start_recording">Začni snemanje sledi</string>
+    <string name="stop_recording">Ustavi snemanje</string>
+    <string name="hillshade">Senčenje reliefa (lidar)</string>
+    <string name="auto_sharpen">Samodejno najostrejši sloj</string>
+    <string name="auto_sharpen_hint">Pri veliki približavi preklopi na ortofoto, ki ima pravo ločljivost tudi tam, kjer je topografska karta samo povečana.</string>
+    <string name="base_brightness">Vidnost karte</string>
+    <string name="relief_visibility">Vidnost reliefa</string>
+    <string name="map_saturation">Barvitost karte</string>
+    <string name="relief_contrast">Kontrast reliefa</string>
+    <string name="relief_brightness">Svetlost reliefa</string>
+    <string name="reset_relief">Ponastavi relief</string>
+    <string name="section_base">PODLAGA</string>
+    <string name="section_relief">RELIEF</string>
+    <string name="section_display">PRIKAZ</string>
+    <string name="night_mode">Nočni način</string>
+    <string name="night_mode_hint">Karta postane rdečkasta in temnejša, da ne pokvari nočnega vida pri uporabi s čelno svetilko.</string>
+    <string name="offline_manager">Prenosi brez povezave</string>
+    <string name="purge_cache">Počisti predpomnilnik</string>
+    <string name="download_area">Prenesi vidno območje</string>
+    <string name="download_custom_area">Prenesi območje lastne karte</string>
+    <string name="help">Navodila</string>
+    <string name="no_base_map">Brez podlage — samo relief in lastne karte</string>
+
+    <string name="help_body"><![CDATA[
+<h3>Na karti</h3>
+<b>Zgornja plošča</b> — tapnite jo, da zamenjate zapis koordinat: WGS84 (decimalno), D96/TM (uradni slovenski), MGRS, stopinje/minute, D48/GK (stari sistem, v katerem je narisana DTK 25).<br><br>
+V drugi vrstici piše natančnost signala, nadmorska višina, smer, kateri sloj je prikazan in ali je vklopljen relief.<br><br>
+<b>Gumb s tarčo</b> — sredina na vašo lokacijo. Še enkrat: vklopi ali izklopi samodejno sledenje.<br>
+<b>Gumb +</b> — shrani trenutno lokacijo kot točko.<br>
+<b>Dolg pritisk na karto</b> — doda točko na tistem mestu.<br>
+<b>Tap na točko</b> — jo nastavi za cilj; plošča nato kaže razdaljo, azimut in za koliko stopinj se obrniti.
+
+<h3>Sloji</h3>
+<b>DTK 50</b> — državna topografska karta. Pri oddaljenem pogledu se samodejno menja med preglednimi kartami (DPK 750/500/250), pod z9 pa preide na OpenTopoMap.<br>
+<b>Ortofoto</b> — letalski posnetki, ločljivost 25 cm.<br>
+<b>OpenTopoMap</b> — svetovna odprta karta.<br>
+<b>Brez podlage</b> — pokaže samo relief in vaše lastne karte.<br><br>
+<b>Vidnost karte (0–100)</b> — karta bledi proti belemu, ne temni. Tako ostane relief čitljiv.<br>
+<b>Vidnost reliefa (0–100)</b> — jakost lidarskega senčenja. Obe drsni lestvici sta v istih enotah, zato ju nastavljate eno proti drugi: karto navzdol in relief navzgor, ali obratno.<br>
+<b>Samodejno najostrejši sloj</b> — pri veliki približavi preklopi na ortofoto, ker DTK 50 nad z16 samo še povečuje isto sliko.
+
+<h3>Lastne karte</h3>
+Fotografirajte papirnato karto ali uvozite sliko, nato jo umerite, da aplikacija ve, kje na svetu leži.<br><br>
+<b>Umerjanje:</b> tapnite točko na sliki, nato premaknite karto tako, da je križec na isti točki v naravi, in pritisnite <i>Dodaj par</i>. Ponovite.<br><br>
+<b>Zakaj več točk:</b> fotografija papirja je vedno posneta pod kotom, zato je popačenje projektivno. Z 2 točkama aplikacija ujame le premik, merilo in zasuk; s 4 ali več odpravi tudi kot fotografiranja.<br><br>
+<b>Nasveti za natančnost:</b>
+<ul>
+<li>Uporabite 6 ali več točk in jih razporedite po vogalih.</li>
+<li>Izbirajte nedvoumne točke: križišča, vogale stavb, vrhove, mostove.</li>
+<li>Za ujemanje stavb in cest preklopite podlago na ortofoto.</li>
+<li>List fotografirajte čim bolj plosko in v enakomerni svetlobi. Matematika popravi kot, ne pa zvitega ali prepognjenega papirja.</li>
+</ul>
+<b>Pričakovana napaka</b> je navzkrižno preverjena: aplikacija ponovi izračun brez vsake točke posebej in izmeri, kako se zmoti. Zato je poštena ocena, ne pa samo skladnost s točkami, ki ste jih vnesli. Pod 25 m je dobro, nad 50 m vas opozori.<br><br>
+Ko je karta umerjena, jo prikažete z <i>Prikaži na karti</i>, podlago pa lahko povsem izklopite v Slojih.
+
+<h3>Točke in proge</h3>
+Točke lahko uvozite ali izvozite kot GPX, torej jih delite z Garminom, Locusom in podobnimi.<br><br>
+<b>Proga</b> je zaporedje kontrolnih točk. Sestavite jo tako, da točke tapnete v vrstnem redu, po katerem jih boste tekli. Med tekom plošča kaže številko kontrole, razdaljo, azimut in čas; ko se približate na 25 m (nastavljivo 10–40 m), aplikacija zavibrira in preskoči na naslednjo ter shrani vmesni čas.
+
+<h3>Snemanje sledi</h3>
+Snemanje teče v ozadju, tudi ko je zaslon ugasnjen in je telefon v žepu. Sled se sproti shranjuje, tako da je ob morebitni prekinitvi izgubljenih le nekaj sekund. Razdalja in vzpon filtrirata šum GPS, zato mirovanje ne nabira namišljenih kilometrov.
+
+<h3>Brez povezave</h3>
+<b>Prenesi območje</b> shrani vidni izsek, <b>Prenesi območje lastne karte</b> pa točno tisto ozemlje, ki ga pokriva vaša umerjena karta. Če je relief vklopljen, se prenese skupaj s podlago.<br><br>
+V <b>Prenosih</b> vidite, kaj je shranjeno in koliko prostora zaseda, ter lahko posamezno območje izbrišete.
+
+<h3>Dobro je vedeti</h3>
+Relief se prikaže od približno z11 navzgor. Strežnik za relief prvo zahtevo pogosto zavrne in jo takoj zatem postreže, zato se kakšna ploščica pojavi z zamudo sekunde ali dveh.<br><br>
+DTK 25 se javno ne streže več — zadnje različice so iz leta 1996 v starem sistemu D48/GK. Če imate liste kot slike, jih uvozite med lastne karte.<br><br>
+Kartografske podlage: © Geodetska uprava RS, CC BY 4.0. OpenTopoMap: CC-BY-SA, podatki © OpenStreetMap.
+]]></string>
+
+    <string name="no_packs_yet">Ni prenesenih območij.\n\nNa karti odprite meni → Prenesi območje, da shranite karte za uporabo brez signala.</string>
+    <string name="rotate_map">Vrti karto po smeri</string>
+    <string name="zoom_to_map">Približaj na lastno karto</string>
+    <string name="no_tracks_yet">Ni shranjenih sledi.\n\nSnemanje začnete v meniju na karti.</string>
+    <string name="no_courses_yet">Ni prog.\n\nProgo sestavite iz shranjenih točk — tapnite jih v vrstnem redu, po katerem jih boste tekli.</string>
+    <string name="no_maps_yet">Ni lastnih kart.\n\nFotografirajte papirnato karto ali uvozite sliko, nato jo umerite na DTK 50.</string>
+</resources>

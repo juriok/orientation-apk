@@ -1,0 +1,25 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#2E6B3E"
+        android:pathData="M0,0 L108,0 L108,108 L0,108 Z" />
+    <!-- Faint contour lines, echoing a topographic sheet. -->
+    <path
+        android:strokeColor="#3E8551"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:pathData="M-4,24 q28,-14 56,0 q28,14 60,0" />
+    <path
+        android:strokeColor="#3E8551"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:pathData="M-4,54 q28,-14 56,0 q28,14 60,0" />
+    <path
+        android:strokeColor="#3E8551"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:pathData="M-4,84 q28,-14 56,0 q28,14 60,0" />
+</vector>

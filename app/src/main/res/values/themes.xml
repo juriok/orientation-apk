@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.Orientacija" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/brand</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/brand_dark</item>
+        <item name="android:statusBarColor">@color/brand_dark</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+    </style>
+
+    <!-- Map controls. Material3 would otherwise tint these from its default purple scheme,
+         which reads as someone else's app sitting on top of the map. -->
+    <style name="MapFab" parent="Widget.Material3.FloatingActionButton.Primary">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="backgroundTint">@color/fab_secondary</item>
+        <item name="tint">@color/white</item>
+        <item name="elevation">5dp</item>
+    </style>
+
+    <!-- The location button is the one reached for while moving, so it is the brighter,
+         full-size target and the rest recede behind it. -->
+    <style name="MapFabPrimary" parent="MapFab">
+        <item name="backgroundTint">@color/brand</item>
+        <item name="elevation">8dp</item>
+    </style>
+
+    <!-- Settings-panel building blocks, so the sections read as a structured sheet rather
+         than an undifferentiated stack of sliders. -->
+    <style name="SectionHeader">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.10</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">2dp</item>
+    </style>
+
+    <style name="SliderLabel">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingStart">2dp</item>
+        <item name="android:paddingEnd">2dp</item>
+    </style>
+
+    <style name="TuningSlider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingTop">2dp</item>
+        <item name="android:paddingBottom">2dp</item>
+    </style>
+
+    <style name="PanelDivider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:layout_marginTop">14dp</item>
+        <item name="android:layout_marginBottom">2dp</item>
+        <item name="android:background">#33888888</item>
+    </style>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand">#2E6B3E</color>
+    <color name="brand_dark">#1B4526</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="panel_scrim">#CC000000</color>
+    <color name="accent_orange">#FF6D00</color>
+    <color name="fab_secondary">#4A5A50</color>
+    <color name="ic_launcher_background">#2E6B3E</color>
+</resources>

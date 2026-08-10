@@ -1,8 +1,27 @@
 # Orientacija
 
-Android orientation app for Slovenia. Shows your GPS position on Slovenian state
+Android orienteering app for Slovenia. Shows your GPS position on Slovenian state
 topographic maps, and on your own maps — including photographs of paper sheets, which the
 app georeferences so your live position projects onto them.
+
+[![Download APK](https://img.shields.io/badge/download-Orientacija%202.0-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/juriok/orientation-apk/raw/main/Orientacija-2.0.apk)
+
+![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?logo=kotlin&logoColor=white)
+![APK 5.3 MB](https://img.shields.io/badge/APK-5.3%20MB-blue)
+![Maps CC BY 4.0](https://img.shields.io/badge/map%20data-GURS%20CC%20BY%204.0-lightgrey)
+
+## Install
+
+1. Download **[Orientacija-2.0.apk](https://github.com/juriok/orientation-apk/raw/main/Orientacija-2.0.apk)** on your phone.
+2. Open it. Android will ask you to allow installs from this source — this is normal for an
+   app that does not come from Play; grant it for your browser or file manager.
+3. On first run, allow **location** access. Choose *Precise*, and *While using the app* is
+   enough unless you record tracks with the screen off, which needs *Allow all the time*.
+
+Requires Android 8.0 (API 26) or newer. Needs a data connection the first time you visit an
+area, to fetch map tiles — use **Offline download** beforehand if you are heading somewhere
+without signal.
 
 ## Map layers
 
@@ -143,7 +162,8 @@ keyAlias=...
 keyPassword=...
 ```
 
-Without it, `assembleRelease` falls back to the debug key so the APK still installs.
+Neither that file nor the keystore is in this repo — both are gitignored and kept locally.
+Without them, `assembleRelease` falls back to the debug key so the APK still installs.
 
 ## Layout
 

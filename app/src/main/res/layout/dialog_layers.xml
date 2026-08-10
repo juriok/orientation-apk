@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Layer choice, map appearance and relief tuning are independent settings. An earlier
+     version folded them into one radio list, which made picking "dimmed" silently discard
+     the layer mode and left the relief looking broken. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="4dp">
+
+        <TextView
+            style="@style/SectionHeader"
+            android:text="@string/section_base" />
+
+        <RadioGroup
+            android:id="@+id/layerGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            android:id="@+id/txtBrightness"
+            style="@style/SliderLabel" />
+
+        <SeekBar
+            android:id="@+id/seekBrightness"
+            style="@style/TuningSlider"
+            android:max="100" />
+
+        <TextView
+            android:id="@+id/txtSaturation"
+            style="@style/SliderLabel" />
+
+        <SeekBar
+            android:id="@+id/seekSaturation"
+            style="@style/TuningSlider"
+            android:max="100" />
+
+        <View style="@style/PanelDivider" />
+
+        <TextView
+            style="@style/SectionHeader"
+            android:text="@string/section_relief" />
+
+        <CheckBox
+            android:id="@+id/chkRelief"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/hillshade" />
+
+        <TextView
+            android:id="@+id/txtRelief"
+            style="@style/SliderLabel" />
+
+        <SeekBar
+            android:id="@+id/seekRelief"
+            style="@style/TuningSlider"
+            android:max="100" />
+
+        <TextView
+            android:id="@+id/txtReliefContrast"
+            style="@style/SliderLabel" />
+
+        <SeekBar
+            android:id="@+id/seekReliefContrast"
+            style="@style/TuningSlider"
+            android:max="100" />
+
+        <TextView
+            android:id="@+id/txtReliefBrightness"
+            style="@style/SliderLabel" />
+
+        <SeekBar
+            android:id="@+id/seekReliefBrightness"
+            style="@style/TuningSlider"
+            android:max="100" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnResetRelief"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:minHeight="0dp"
+            android:paddingVertical="6dp"
+            android:textSize="13sp"
+            android:text="@string/reset_relief" />
+
+        <View style="@style/PanelDivider" />
+
+        <TextView
+            style="@style/SectionHeader"
+            android:text="@string/section_display" />
+
+        <CheckBox
+            android:id="@+id/chkNight"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/night_mode" />
+
+        <TextView
+            android:id="@+id/txtNightHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="36dp"
+            android:paddingEnd="0dp"
+            android:paddingBottom="6dp"
+            android:textSize="12sp"
+            android:text="@string/night_mode_hint" />
+
+        <CheckBox
+            android:id="@+id/chkAutoSharp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/auto_sharpen" />
+
+        <TextView
+            android:id="@+id/txtAutoSharp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="36dp"
+            android:paddingEnd="0dp"
+            android:paddingBottom="8dp"
+            android:textSize="12sp"
+            android:text="@string/auto_sharpen_hint" />
+    </LinearLayout>
+</ScrollView>

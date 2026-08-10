@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Readable over any map: near-opaque so contour lines never show through the text, with a
+     faint light edge so the panel keeps a defined boundary against a dark aerial photo. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#E62A2E33" />
+    <corners android:radius="16dp" />
+    <stroke android:width="1dp" android:color="#33FFFFFF" />
+</shape>
