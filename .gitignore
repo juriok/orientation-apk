@@ -1,0 +1,10 @@
+# gradle / build output
+.gradle/
+.kotlin/
+build/
+app/build/
+local.properties
+# signing material - never commit
+*.jks
+*.keystore
+keystore.properties
