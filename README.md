@@ -6,6 +6,14 @@ app georeferences so your live position projects onto them.
 
 [![Download APK](https://img.shields.io/badge/download-Orientacija%202.0-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/juriok/orientation-apk/raw/main/Orientacija-2.0.apk)
 
+> **Test build 2.1** — GPX import, CLSS 2023–25 relief and steadied GPS:
+> [Orientacija-2.1-test.apk](https://github.com/juriok/orientation-apk/raw/claude/orientation-gpx-lidar-update-9ha5g4/Orientacija-2.1-test.apk).
+> It is signed with the **debug key**, because the release keystore is not in this repo, so
+> Android will refuse to install it over 2.0. Export your waypoints and tracks to GPX first,
+> then uninstall 2.0 — uninstalling clears saved points, tracks, courses and custom maps.
+> For an upgrade in place, rebuild it yourself with `keystore.properties` in the project
+> root (see [Building](#building)).
+
 ![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?logo=kotlin&logoColor=white)
 ![APK 5.3 MB](https://img.shields.io/badge/APK-5.3%20MB-blue)
@@ -126,9 +134,24 @@ Two safeguards sit behind that number:
 
 ## Other features
 
-- **Lidar shaded relief** — blends the GURS lidar relief over any base layer with a
-  MULTIPLY composite, so contours and true terrain shape read together. Strength is
-  adjustable. Available from z11 down.
+- **Lidar shaded relief** — blends lidar relief over any base layer with a MULTIPLY
+  composite, so contours and true terrain shape read together. Strength is adjustable.
+  Two scans to choose between:
+  - **Lidar 2011–2014** — the GURS WMS layer `SI.GURS.ZPDZ:LIDAR` (its capabilities title
+    is `LIDAR_20112014_BT`). Instant, nationwide, negligible data. Available from z11.
+  - **CLSS 2023–25** — the current national re-scan behind [clss.si](https://clss.si/).
+    It has no map service, so the app reads the official 1 km sheets: each carries a 1 m
+    overview stored uncompressed at the end of the file, so one HTTP range request fetches
+    exactly it — about 1 MB per km², cached in `filesDir`. Tiles are reprojected from
+    D96/TM on the device. Nothing is fetched below z14; below that only stored sheets draw.
+    Pre-fetchable per area, counted in the offline manager. See `map/ClssSheets.kt`.
+- **GPX import** — reads a whole file and offers what it holds: waypoints join your points,
+  tracks are stored and drawn in blue, routes become courses you can run. See `data/GpxIo.kt`.
+- **Steadied GPS** — fixes coarser than the estimate already held are rejected rather than
+  averaged in, so a cell-tower fix cannot throw the marker across the valley; the rest go
+  through a Kalman filter whose process noise follows your speed, so the marker sits still
+  when you do and keeps up when you move. The `± m` readout is the filter's own variance.
+  See `geo/LocationSmoother.kt`.
 - **Track recording** — runs in a foreground service so it keeps logging with the screen
   off and the phone pocketed. Autosaves every 20 points, so a killed process costs seconds
   rather than the whole run. Distance and ascent filter GPS jitter rather than summing it.
@@ -139,6 +162,8 @@ Two safeguards sit behind that number:
 - **Offline download** — cache the visible area for use with no signal.
 - **Coordinates** — tap the top panel to cycle WGS84 decimal, D96/TM, MGRS, degrees/minutes, D48/GK.
 - **Waypoints** — long-press the map, or the **+** button. GPX import/export.
+- **Track display** — show any saved or imported track on the map, in a colour distinct
+  from a live recording.
 - **Target bearing** — tap a waypoint marker to set it as target.
 - **Base map dimming** — a middle setting between full base map and none, so a custom sheet
   stands out while the surrounding terrain stays readable as context.
@@ -180,8 +205,12 @@ Without them, `assembleRelease` falls back to the debug key so the APK still ins
 geo/Transform2D.kt        control-point fitting: similarity / affine / homography
 geo/CoordinateSystems.kt  D96/TM, D48/GK, UTM 33N, MGRS
 geo/GeoMath.kt            Web Mercator, distance, bearing
-map/MapLayers.kt          WMS-as-XYZ tile sources
+geo/LocationSmoother.kt   outlier rejection and Kalman filtering of GPS fixes
+map/MapLayers.kt          WMS-as-XYZ tile sources, and the choice of relief scan
+map/ClssSheets.kt         fetches and caches CLSS 1 km shading sheets
+map/ClssRelief.kt         reprojects those sheets into Web Mercator tiles
 map/OfflineDownloader.kt  area pre-caching
+data/GpxIo.kt             GPX read/write: waypoints, tracks and routes
 custom/CalibrationActivity.kt  two-pane control-point UI
 custom/CalibratedMapOverlay.kt draws the warped image onto the map
 custom/ImagePointView.kt       pan/zoom image view reporting image-pixel taps
