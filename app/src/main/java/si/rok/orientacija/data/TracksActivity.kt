@@ -10,6 +10,8 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.preference.PreferenceManager
+import si.rok.orientacija.MainActivity
 import si.rok.orientacija.R
 import si.rok.orientacija.databinding.ActivitySimpleListBinding
 import si.rok.orientacija.util.EdgeToEdge
@@ -62,13 +64,15 @@ class TracksActivity : AppCompatActivity() {
         items.sortByDescending { it.startedAt }
         b.txtEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
         val fmt = SimpleDateFormat("d.M.yyyy HH:mm", Locale.getDefault())
+        val shown = shownIds()
         b.list.adapter = object : ArrayAdapter<Track>(
             this, android.R.layout.simple_list_item_2, android.R.id.text1, items
         ) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val v = super.getView(position, convertView, parent)
                 val t = items[position]
-                v.findViewById<TextView>(android.R.id.text1).text = t.name
+                v.findViewById<TextView>(android.R.id.text1).text =
+                    if (t.id in shown) "● ${t.name}" else t.name
                 v.findViewById<TextView>(android.R.id.text2).text = summary(t, fmt.format(Date(t.startedAt)))
                 return v
             }
@@ -83,18 +87,43 @@ class TracksActivity : AppCompatActivity() {
     }
 
     private fun showActions(t: Track) {
+        val shown = t.id in shownIds()
+        val visibility = getString(if (shown) R.string.hide_from_map else R.string.show_on_map)
         AlertDialog.Builder(this)
             .setTitle(t.name)
-            .setItems(arrayOf(getString(R.string.export_gpx), getString(R.string.delete))) { _, which ->
+            .setItems(
+                arrayOf(visibility, getString(R.string.export_gpx), getString(R.string.delete))
+            ) { _, which ->
                 when (which) {
-                    0 -> { pendingExport = t; exportGpx.launch("${sanitise(t.name)}.gpx") }
-                    1 -> {
+                    0 -> setShown(t, !shown)
+                    1 -> { pendingExport = t; exportGpx.launch("${sanitise(t.name)}.gpx") }
+                    2 -> {
+                        setShown(t, false)
                         store.delete(t.id)
                         refresh()
                     }
                 }
             }
             .show()
+    }
+
+    private fun shownIds(): Set<String> =
+        PreferenceManager.getDefaultSharedPreferences(this)
+            .getStringSet(MainActivity.KEY_SHOWN_TRACKS, emptySet()).orEmpty()
+
+    /**
+     * The set has to be copied before it is changed: the one SharedPreferences hands back
+     * is its own, and editing it in place leaves the stored value undefined.
+     */
+    private fun setShown(t: Track, visible: Boolean) {
+        val ids = shownIds().toMutableSet()
+        if (visible) ids.add(t.id) else ids.remove(t.id)
+        PreferenceManager.getDefaultSharedPreferences(this).edit()
+            .putStringSet(MainActivity.KEY_SHOWN_TRACKS, ids).apply()
+        if (visible) {
+            Toast.makeText(this, "Prikazano na karti: ${t.name}", Toast.LENGTH_SHORT).show()
+        }
+        refresh()
     }
 
     private fun sanitise(s: String) = s.replace(Regex("[^A-Za-z0-9ČčŠšŽž _-]"), "").ifBlank { "sled" }

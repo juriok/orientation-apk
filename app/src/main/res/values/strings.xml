@@ -58,6 +58,13 @@
     <string name="section_display">PRIKAZ</string>
     <string name="night_mode">Nočni način</string>
     <string name="night_mode_hint">Karta postane rdečkasta in temnejša, da ne pokvari nočnega vida pri uporabi s čelno svetilko.</string>
+    <string name="relief_source">Vir senčenja</string>
+    <string name="clss_data_warning">CLSS je nova različica lidarja (clss.si). Ni kartne storitve, zato aplikacija prenaša izvirne liste — približno 1 MB na kvadratni kilometer. Prenese se enkrat in ostane shranjeno.</string>
+    <string name="clss_zoom_hint">CLSS se prenaša od približave z14 naprej. Bolj oddaljeno se prikaže samo tisto, kar je že shranjeno.</string>
+    <string name="download_clss">Prenesi CLSS relief za to območje</string>
+    <string name="import_gpx_all">Uvozi GPX (točke, sledi, proge)</string>
+    <string name="show_on_map">Prikaži na karti</string>
+    <string name="hide_from_map">Odstrani s karte</string>
     <string name="offline_manager">Prenosi brez povezave</string>
     <string name="purge_cache">Počisti predpomnilnik</string>
     <string name="download_area">Prenesi vidno območje</string>
@@ -83,6 +90,13 @@ V drugi vrstici piše natančnost signala, nadmorska višina, smer, kateri sloj 
 <b>Vidnost reliefa (0–100)</b> — jakost lidarskega senčenja. Obe drsni lestvici sta v istih enotah, zato ju nastavljate eno proti drugi: karto navzdol in relief navzgor, ali obratno.<br>
 <b>Samodejno najostrejši sloj</b> — pri veliki približavi preklopi na ortofoto, ker DTK 50 nad z16 samo še povečuje isto sliko.
 
+<h3>Vir senčenja</h3>
+Slovenija je bila lasersko skenirana dvakrat in izbirate lahko med obema.<br><br>
+<b>Lidar 2011–2014</b> — državna kartna storitev. Takoj se izriše, pokriva vso državo in porabi zelo malo podatkov.<br>
+<b>CLSS 2023–25</b> — novo ciklično lasersko skeniranje s portala clss.si. Je ostrejše in predvsem novejše: pokaže plazove, nove gozdne vlake, kamnolome in spremenjene struge po poplavah 2023, ki jih na starem skeniranju še ni.<br><br>
+CLSS nima kartne storitve — GURS ga objavlja kot datoteke po en kvadratni kilometer — zato aplikacija prenaša izvirne liste in jih sama pretvori v karto. To pomeni približno <b>1 MB na km²</b>; prenese se enkrat in ostane shranjeno tudi brez signala. Listi se prenašajo šele od približave z14 naprej, bolj oddaljeno pa se izriše samo tisto, kar je že shranjeno — zato relief pri odmiku ne izgine po nesreči, ampak namenoma.<br><br>
+Pred turo je najbolje uporabiti <i>Prenesi CLSS relief za to območje</i> v meniju, dokler ste še na wifiju.
+
 <h3>Lastne karte</h3>
 Fotografirajte papirnato karto ali uvozite sliko, nato jo umerite, da aplikacija ve, kje na svetu leži.<br><br>
 <b>Umerjanje:</b> tapnite točko na sliki, nato premaknite karto tako, da je križec na isti točki v naravi, in pritisnite <i>Dodaj par</i>. Ponovite.<br><br>
@@ -98,7 +112,14 @@ Fotografirajte papirnato karto ali uvozite sliko, nato jo umerite, da aplikacija
 Ko je karta umerjena, jo prikažete z <i>Prikaži na karti</i>, podlago pa lahko povsem izklopite v Slojih.
 
 <h3>Točke in proge</h3>
-Točke lahko uvozite ali izvozite kot GPX, torej jih delite z Garminom, Locusom in podobnimi.<br><br>
+<b>Uvozi GPX</b> v meniju prebere celotno datoteko in vam pokaže, kaj je v njej — točke, sledi in poti — vi pa izberete, kaj od tega uvoziti:<br>
+<ul>
+<li><b>točke (wpt)</b> se dodajo med shranjene točke,</li>
+<li><b>sledi (trk)</b> se shranijo med sledi in se takoj izrišejo na karti z modro črto; posamezne odseke sledi aplikacija poveže v eno,</li>
+<li><b>poti (rte)</b> postanejo proge, ki jih lahko takoj zaženete.</li>
+</ul>
+Po uvozu se karta sama premakne na uvoženo. Katero sled vidite na karti, določate v <i>Sledi</i> z <i>Prikaži na karti</i>; prikazane so označene s piko.<br><br>
+Vse troje lahko tudi izvozite kot GPX, torej jih delite z Garminom, Locusom in podobnimi.<br><br>
 <b>Proga</b> je zaporedje kontrolnih točk. Sestavite jo tako, da točke tapnete v vrstnem redu, po katerem jih boste tekli. Med tekom plošča kaže številko kontrole, razdaljo, azimut in čas; ko se približate na 25 m (nastavljivo 10–40 m), aplikacija zavibrira in preskoči na naslednjo ter shrani vmesni čas.
 
 <h3>Snemanje sledi</h3>
@@ -117,7 +138,7 @@ Kartografske podlage: © Geodetska uprava RS, CC BY 4.0. OpenTopoMap: CC-BY-SA, 
     <string name="no_packs_yet">Ni prenesenih območij.\n\nNa karti odprite meni → Prenesi območje, da shranite karte za uporabo brez signala.</string>
     <string name="rotate_map">Vrti karto po smeri</string>
     <string name="zoom_to_map">Približaj na lastno karto</string>
-    <string name="no_tracks_yet">Ni shranjenih sledi.\n\nSnemanje začnete v meniju na karti.</string>
-    <string name="no_courses_yet">Ni prog.\n\nProgo sestavite iz shranjenih točk — tapnite jih v vrstnem redu, po katerem jih boste tekli.</string>
+    <string name="no_tracks_yet">Ni shranjenih sledi.\n\nSnemanje začnete v meniju na karti, tujo sled pa uvozite z GPX.</string>
+    <string name="no_courses_yet">Ni prog.\n\nProgo sestavite iz shranjenih točk — tapnite jih v vrstnem redu, po katerem jih boste tekli — ali pa uvozite GPX, ki vsebuje pot (rte).</string>
     <string name="no_maps_yet">Ni lastnih kart.\n\nFotografirajte papirnato karto ali uvozite sliko, nato jo umerite na DTK 50.</string>
 </resources>

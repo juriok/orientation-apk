@@ -53,6 +53,16 @@
             android:layout_height="wrap_content"
             android:text="@string/hillshade" />
 
+        <!-- Which scan the shading comes from. Built in code from the source list, for the
+             same reason the base layers are: two places to edit is one place to forget. -->
+        <RadioGroup
+            android:id="@+id/reliefGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="24dp"
+            android:paddingEnd="0dp"
+            android:orientation="vertical" />
+
         <TextView
             android:id="@+id/txtRelief"
             style="@style/SliderLabel" />

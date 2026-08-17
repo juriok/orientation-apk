@@ -184,3 +184,40 @@ object MapLayers {
 
     fun byId(id: String?): LayerDef = ALL.firstOrNull { it.id == id } ?: TOPO
 }
+
+/**
+ * Which lidar scan the relief is drawn from.
+ *
+ * Slovenia has been scanned twice. The 2011-2014 pass is what the national WMS still
+ * serves — the layer's own metadata calls it LIDAR_20112014 — and it covers the country
+ * evenly at a resolution that suits a map. The 2023-25 re-scan published at clss.si is
+ * sharper and current, but is distributed as files rather than as a map service, so it
+ * costs about a megabyte for each square kilometre it is first shown over.
+ *
+ * Neither supersedes the other in the field, which is why both stay: the old one is
+ * instant and everywhere, the new one shows ground that has since moved — landslides,
+ * new forest tracks, quarries, the 2023 floods.
+ */
+enum class ReliefSource(val id: String, val label: String, val description: String) {
+
+    GURS(
+        id = "gurs",
+        label = "Lidar 2011–2014",
+        description = "Državna storitev senčenja, hitra in za vso Slovenijo"
+    ),
+
+    CLSS(
+        id = "clss",
+        label = "CLSS 2023–25",
+        description = "Novo ciklično lasersko skeniranje, ostrejše; prenese ~1 MB/km²"
+    );
+
+    /** Zoom below which this source has nothing useful to draw. */
+    val minZoom: Int
+        get() = if (this == CLSS) ClssRelief.MIN_ZOOM else MapLayers.HILLSHADE_MIN_ZOOM
+
+    companion object {
+        fun byId(id: String?): ReliefSource = entries.firstOrNull { it.id == id } ?: GURS
+    }
+}
+

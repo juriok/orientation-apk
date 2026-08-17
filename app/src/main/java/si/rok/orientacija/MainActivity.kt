@@ -11,6 +11,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -53,8 +54,11 @@ import si.rok.orientacija.custom.CalibratedMapOverlay
 import si.rok.orientacija.custom.CustomMap
 import si.rok.orientacija.custom.CustomMapStore
 import si.rok.orientacija.custom.CustomMapsActivity
+import si.rok.orientacija.data.Course
 import si.rok.orientacija.data.CourseRunner
+import si.rok.orientacija.data.CourseStore
 import si.rok.orientacija.data.CoursesActivity
+import si.rok.orientacija.data.GpxIo
 import si.rok.orientacija.data.Track
 import si.rok.orientacija.data.TrackRecorder
 import si.rok.orientacija.data.TrackRecordingService
@@ -67,6 +71,9 @@ import si.rok.orientacija.databinding.ActivityMainBinding
 import si.rok.orientacija.geo.CoordinateSystems
 import si.rok.orientacija.geo.GeoMath
 import si.rok.orientacija.geo.Transform2D
+import si.rok.orientacija.map.ClssRelief
+import si.rok.orientacija.map.ClssReliefProvider
+import si.rok.orientacija.map.ClssSheets
 import si.rok.orientacija.map.GursTopoTileSource
 import si.rok.orientacija.map.HillshadeOverlay
 import si.rok.orientacija.map.LayerDef
@@ -77,6 +84,7 @@ import si.rok.orientacija.map.OfflineActivity
 import si.rok.orientacija.map.OfflineDownloader
 import si.rok.orientacija.map.OfflinePack
 import si.rok.orientacija.map.OfflinePackStore
+import si.rok.orientacija.map.ReliefSource
 import si.rok.orientacija.util.BitmapUtils
 import java.io.File
 import kotlin.math.abs
@@ -95,6 +103,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var hillshadeOverlay: HillshadeOverlay? = null
     private var trackLine: Polyline? = null
     private var courseLine: Polyline? = null
+    /** Saved or imported tracks the user has asked to see, drawn under the live one. */
+    private val shownTrackLines = mutableListOf<Polyline>()
     private val waypointMarkers = mutableListOf<Marker>()
     private val controlMarkers = mutableListOf<Marker>()
 
@@ -114,6 +124,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var sharpenedFrom: LayerDef? = null
     private var coordFormat = 0
     private var hillshadeOn = false
+    private var reliefSource = ReliefSource.GURS
+    /** Source the live overlay was built for, so a change can be noticed and rebuilt. */
+    private var reliefOverlaySource: ReliefSource? = null
     private var hillshadeStrength = HillshadeOverlay.DEFAULT_STRENGTH
     private var hillshadeContrast = HillshadeOverlay.DEFAULT_CONTRAST
     private var hillshadeBrightness = HillshadeOverlay.DEFAULT_BRIGHTNESS
@@ -152,6 +165,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         ActivityResultContracts.StartActivityForResult()
     ) { rebuildOverlays(); updateReadout() }
 
+    // GPX is routinely reported as text/xml or application/octet-stream, and a picker will
+    // hide a file whose type it cannot match, so the filter has to stay wide open.
+    private val importGpx = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? -> uri?.let { importGpxFile(it) } }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         configureOsmdroid()
@@ -164,6 +183,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         baseBrightness = prefs.getInt(KEY_BASE_BRIGHTNESS, 100)
         autoSharpen = prefs.getBoolean(KEY_AUTO_SHARPEN, true)
         hillshadeOn = prefs.getBoolean(KEY_HILLSHADE, false)
+        reliefSource = ReliefSource.byId(prefs.getString(KEY_RELIEF_SOURCE, ReliefSource.GURS.id))
         hillshadeStrength = prefs.getInt(KEY_HILLSHADE_STRENGTH, HillshadeOverlay.DEFAULT_STRENGTH)
         hillshadeContrast = prefs.getInt(KEY_HILLSHADE_CONTRAST, HillshadeOverlay.DEFAULT_CONTRAST)
         hillshadeBrightness = prefs.getInt(KEY_HILLSHADE_BRIGHTNESS, HillshadeOverlay.DEFAULT_BRIGHTNESS)
@@ -332,6 +352,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         eventsOverlay?.let { map.overlays.add(it) }          // bottom: long-press to add points
         if (hillshadeOn) hillshadeOverlay?.let { map.overlays.add(it) }
         customOverlay?.let { map.overlays.add(it) }
+        shownTrackLines.forEach { map.overlays.add(it) }
         courseLine?.let { if (CourseRunner.isRunning) map.overlays.add(it) }
         trackLine?.let { if (it.actualPoints.isNotEmpty()) map.overlays.add(it) }
         controlMarkers.forEach { map.overlays.add(it) }
@@ -358,6 +379,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val seekBrightness = view.findViewById<SeekBar>(R.id.seekBrightness)
         val txtBrightness = view.findViewById<android.widget.TextView>(R.id.txtBrightness)
         val chkRelief = view.findViewById<android.widget.CheckBox>(R.id.chkRelief)
+        val reliefGroup = view.findViewById<android.widget.RadioGroup>(R.id.reliefGroup)
         val seekRelief = view.findViewById<SeekBar>(R.id.seekRelief)
         val txtRelief = view.findViewById<android.widget.TextView>(R.id.txtRelief)
         val seekSaturation = view.findViewById<SeekBar>(R.id.seekSaturation)
@@ -414,6 +436,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             ": " + (if (v == 50) "nevtralno" else "%+d".format(v - 50))
 
         chkRelief.isChecked = hillshadeOn
+        // Built from the source list for the same reason the base layers are.
+        ReliefSource.entries.forEachIndexed { i, src ->
+            reliefGroup.addView(android.widget.RadioButton(this).apply {
+                id = View.generateViewId()
+                text = "${src.label} — ${src.description}"
+                tag = i
+                isChecked = src == reliefSource
+            })
+        }
         seekRelief.progress = strengthToPercent(hillshadeStrength)
         txtRelief.text = reliefLabel(seekRelief.progress)
         seekRelief.setOnSeekBarChangeListener(simpleSeek { txtRelief.text = reliefLabel(it) })
@@ -442,6 +473,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             seekContrast.isEnabled = on
             seekReliefBright.isEnabled = on
             btnReset.isEnabled = on
+            for (i in 0 until reliefGroup.childCount) reliefGroup.getChildAt(i).isEnabled = on
         }
         setReliefEnabled(hillshadeOn)
         chkRelief.setOnCheckedChangeListener { _, checked -> setReliefEnabled(checked) }
@@ -474,6 +506,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     baseBrightness = seekBrightness.progress.coerceAtLeast(10)
                 }
                 hillshadeOn = chkRelief.isChecked
+                val previousSource = reliefSource
+                reliefSource = (0 until reliefGroup.childCount)
+                    .map { reliefGroup.getChildAt(it) as android.widget.RadioButton }
+                    .firstOrNull { it.isChecked }
+                    ?.let { ReliefSource.entries[it.tag as Int] } ?: reliefSource
                 hillshadeStrength = percentToStrength(seekRelief.progress.coerceAtLeast(8))
                 hillshadeContrast = seekContrast.progress
                 hillshadeBrightness = seekReliefBright.progress
@@ -483,6 +520,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
                 prefs.edit()
                     .putString(KEY_LAYER, currentLayer.id)
+                    .putString(KEY_RELIEF_SOURCE, reliefSource.id)
                     .putInt(KEY_BASE_BRIGHTNESS, baseBrightness)
                     .putBoolean(KEY_HILLSHADE, hillshadeOn)
                     .putInt(KEY_HILLSHADE_STRENGTH, hillshadeStrength)
@@ -497,9 +535,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 applyBaseBrightness()
                 rebuildOverlays()
                 updateReadout()
-                if (hillshadeOn && b.map.zoomLevelDouble < MapLayers.HILLSHADE_MIN_ZOOM) {
-                    Toast.makeText(this, "Relief se prikaže pri večji približavi.", Toast.LENGTH_LONG).show()
-                }
+                if (hillshadeOn) announceRelief(sourceChanged = reliefSource != previousSource)
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
@@ -600,14 +636,22 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun applyHillshade() {
-        if (hillshadeOn && hillshadeOverlay == null) {
-            // A stock provider, deliberately. osmdroid resolves a tile by walking its
-            // provider chain — filesystem, archive, approximator, downloader — and signals
-            // "try the next one" through mapTileRequestFailed. Overriding that to retry, as
-            // an earlier version did, stopped requests ever reaching the downloader and
-            // wedged every tile as permanently in-progress. The 504s are handled instead by
-            // the once-a-second redraw below, which re-requests whatever is still missing.
-            val provider = MapTileProviderBasic(applicationContext, MapLayers.HILLSHADE)
+        // The two scans are served in completely different ways, so switching between them
+        // means a new provider rather than a new URL.
+        if (hillshadeOn && (hillshadeOverlay == null || reliefOverlaySource != reliefSource)) {
+            hillshadeOverlay?.onDetach(b.map)
+            val provider = when (reliefSource) {
+                // Drawn on the device from the CLSS sheets; see ClssReliefProvider.
+                ReliefSource.CLSS -> ClssReliefProvider(applicationContext)
+                // A stock provider, deliberately. osmdroid resolves a tile by walking its
+                // provider chain — filesystem, archive, approximator, downloader — and
+                // signals "try the next one" through mapTileRequestFailed. Overriding that
+                // to retry, as an earlier version did, stopped requests ever reaching the
+                // downloader and wedged every tile as permanently in-progress. The 504s are
+                // handled instead by the once-a-second redraw below, which re-requests
+                // whatever is still missing.
+                ReliefSource.GURS -> MapTileProviderBasic(applicationContext, MapLayers.HILLSHADE)
+            }
             // Size the cache for the screen. Nothing in osmdroid's draw path does this for a
             // provider you create yourself — the MapView only sizes its own — and the default
             // holds barely a third of a phone screen. Under-sized, the relief renders as one
@@ -616,8 +660,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             provider.tileCache.setAutoEnsureCapacity(true)
             provider.ensureCapacity(tileCacheCapacityForScreen())
             hillshadeOverlay = HillshadeOverlay(this, provider).apply { strength = hillshadeStrength }
+            reliefOverlaySource = reliefSource
         }
         hillshadeOverlay?.apply {
+            tones = when (reliefSource) {
+                ReliefSource.CLSS -> HillshadeOverlay.Tones.CLSS_2023
+                ReliefSource.GURS -> HillshadeOverlay.Tones.GURS_2011
+            }
             strength = hillshadeStrength
             contrast = hillshadeContrast
             brightness = hillshadeBrightness
@@ -626,6 +675,93 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             standalone = baseBrightness == 0
         }
         applyNightTint()
+    }
+
+    /**
+     * Says what the relief will and will not show right now.
+     *
+     * Worth being explicit about: with CLSS the map can look broken otherwise. It draws
+     * nothing at all until the sheets under the view have come down, and zoomed out it
+     * deliberately draws only what is already stored, so silence would read as a fault
+     * rather than as the app declining to pull a hundred megabytes.
+     */
+    private fun announceRelief(sourceChanged: Boolean) {
+        val zoom = b.map.zoomLevelDouble
+        if (reliefSource == ReliefSource.CLSS && sourceChanged &&
+            !prefs.getBoolean(KEY_CLSS_EXPLAINED, false)
+        ) {
+            prefs.edit().putBoolean(KEY_CLSS_EXPLAINED, true).apply()
+            AlertDialog.Builder(this)
+                .setTitle(ReliefSource.CLSS.label)
+                .setMessage(getString(R.string.clss_data_warning))
+                .setPositiveButton(R.string.download_clss) { _, _ ->
+                    downloadClssArea(b.map.boundingBox, "Vidno območje")
+                }
+                .setNegativeButton(R.string.ok, null)
+                .show()
+            return
+        }
+        when {
+            zoom < reliefSource.minZoom ->
+                Toast.makeText(this, "Relief se prikaže pri večji približavi.", Toast.LENGTH_LONG).show()
+            reliefSource == ReliefSource.CLSS && zoom < ClssRelief.FETCH_MIN_ZOOM ->
+                Toast.makeText(this, R.string.clss_zoom_hint, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    /**
+     * Pulls every CLSS sheet covering [box] so the relief is there without a signal.
+     *
+     * Sheets already held are skipped rather than refetched, which is what makes widening
+     * an area cheap: only the new edge is downloaded.
+     */
+    private fun downloadClssArea(box: BoundingBox, areaName: String) {
+        val missing = ClssSheets.sheetsIn(box).filterNot { (e, n) -> ClssSheets.isHeld(this, e, n) }
+        if (missing.isEmpty()) {
+            Toast.makeText(this, "CLSS relief za to območje je že shranjen.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Prenesi CLSS relief: $areaName")
+            .setMessage(
+                "%d listov po 1 km², približno %d MB.\n\nZunaj obsega skeniranja se listi preskočijo."
+                    .format(missing.size, missing.size)
+            )
+            .setPositiveButton(R.string.ok) { _, _ -> runClssDownload(missing, areaName) }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun runClssDownload(sheets: List<Pair<Int, Int>>, areaName: String) {
+        var cancelled = false
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Prenašam CLSS relief…")
+            .setMessage("0 / ${sheets.size}")
+            .setNegativeButton(R.string.cancel) { _, _ -> cancelled = true }
+            .setCancelable(false)
+            .create()
+        dialog.show()
+
+        Thread {
+            var done = 0
+            var stored = 0
+            for ((e, n) in sheets) {
+                if (cancelled) break
+                if (ClssSheets.sheet(this, e, n, allowFetch = true) != null) stored++
+                done++
+                ui.post { dialog.setMessage("$done / ${sheets.size}") }
+            }
+            ui.post {
+                dialog.dismiss()
+                b.map.invalidate()
+                Toast.makeText(
+                    this,
+                    if (cancelled) "Prenos prekinjen — shranjenih listov: $stored"
+                    else "$areaName: shranjenih listov CLSS: $stored",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }.start()
     }
 
     private fun nightFilterMatrix(): ColorMatrix? =
@@ -750,6 +886,154 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
     }
 
+    /**
+     * Draws the saved tracks the user has picked out, in a colour of their own.
+     *
+     * Deliberately not the recording red: a line you are laying down now and a line
+     * somebody else walked last year mean opposite things when you are standing on a
+     * junction deciding which way to go.
+     */
+    private fun reloadShownTracks() {
+        shownTrackLines.clear()
+        val shown = prefs.getStringSet(KEY_SHOWN_TRACKS, emptySet()).orEmpty()
+        if (shown.isEmpty()) return
+        val recording = TrackRecorder.active?.id
+        for (t in trackStore.load()) {
+            if (t.id !in shown || t.id == recording || t.points.size < 2) continue
+            shownTrackLines.add(Polyline(b.map).apply {
+                outlinePaint.color = Color.parseColor("#1565C0")
+                outlinePaint.strokeWidth = resources.displayMetrics.density * 3f
+                outlinePaint.isAntiAlias = true
+                title = t.name
+                setPoints(t.points.map { GeoPoint(it.lat, it.lon) })
+            })
+        }
+    }
+
+    // ------------------------------------------------------------------ GPX import
+
+    /**
+     * Takes in a GPX file whole.
+     *
+     * A GPX can hold three quite different things at once, and which of them you actually
+     * wanted depends on where the file came from — a planner's route, a friend's recorded
+     * walk, a list of springs. So the file is read first and its contents offered, rather
+     * than guessing and quietly importing the wrong part of it.
+     */
+    private fun importGpxFile(uri: Uri) {
+        val contents = try {
+            contentResolver.openInputStream(uri)?.use { GpxIo.read(it) }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Uvoz ni uspel: ${e.message}", Toast.LENGTH_LONG).show()
+            return
+        }
+        if (contents == null || contents.isEmpty) {
+            Toast.makeText(this, "V datoteki ni točk, sledi ali prog.", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        // Only what the file actually holds is offered, so the choice is never a list of
+        // mostly-greyed-out things that cannot be picked. Each entry carries its own import
+        // and its own extent, so nothing here depends on the order they were built in.
+        val options = mutableListOf<ImportOption>()
+        if (contents.waypoints.isNotEmpty()) {
+            options.add(
+                ImportOption(
+                    label = "Točke: ${contents.waypoints.size}",
+                    extent = contents.waypoints.map { GeoPoint(it.lat, it.lon) },
+                    apply = { importWaypoints(contents.waypoints) }
+                )
+            )
+        }
+        if (contents.tracks.isNotEmpty()) {
+            val points = contents.tracks.sumOf { it.points.size }
+            options.add(
+                ImportOption(
+                    label = "Sledi: ${contents.tracks.size}  ($points točk)",
+                    extent = contents.tracks.flatMap { t -> t.points.map { GeoPoint(it.lat, it.lon) } },
+                    apply = { importTracks(contents.tracks) }
+                )
+            )
+        }
+        if (contents.routes.isNotEmpty()) {
+            options.add(
+                ImportOption(
+                    label = "Proge: ${contents.routes.size}",
+                    extent = contents.routes.flatMap { c -> c.controls.map { it.point() } },
+                    apply = { importRoutes(contents.routes) }
+                )
+            )
+        }
+
+        val checked = BooleanArray(options.size) { true }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.import_gpx)
+            .setMultiChoiceItems(options.map { it.label }.toTypedArray(), checked) { _, which, isChecked ->
+                checked[which] = isChecked
+            }
+            .setPositiveButton(R.string.ok) { _, _ ->
+                val chosen = options.filterIndexed { i, _ -> checked[i] }
+                if (chosen.isEmpty()) return@setPositiveButton
+                val done = chosen.map { it.apply() }
+
+                reloadWaypointMarkers()
+                reloadShownTracks()
+                rebuildOverlays()
+                updateReadout()
+                frame(chosen.flatMap { it.extent })
+                Toast.makeText(this, "Uvoženo — ${done.joinToString(", ")}", Toast.LENGTH_LONG).show()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    /** One offerable part of a GPX file: what to call it, what it covers, how to take it in. */
+    private class ImportOption(
+        val label: String,
+        val extent: List<GeoPoint>,
+        val apply: () -> String
+    )
+
+    private fun importWaypoints(imported: List<Waypoint>): String {
+        val all = waypointStore.load()
+        all.addAll(imported)
+        waypointStore.save(all)
+        return "točk: ${imported.size}"
+    }
+
+    /**
+     * Imported tracks are shown straight away. Importing one is a request to look at it;
+     * having to then find it in a list and switch it on would be a step with no decision in it.
+     */
+    private fun importTracks(imported: List<Track>): String {
+        imported.forEach { trackStore.upsert(it) }
+        val shown = prefs.getStringSet(KEY_SHOWN_TRACKS, emptySet()).orEmpty().toMutableSet()
+        shown.addAll(imported.map { it.id })
+        prefs.edit().putStringSet(KEY_SHOWN_TRACKS, shown).apply()
+        return "sledi: ${imported.size}"
+    }
+
+    private fun importRoutes(imported: List<Course>): String {
+        val store = CourseStore(this)
+        imported.forEach { store.upsert(it) }
+        return "prog: ${imported.size}"
+    }
+
+    /**
+     * Frames what just arrived, since an imported file is rarely over the part of the
+     * country the map happens to be showing. Following the GPS is switched off first, or
+     * the next fix would immediately pull the view back again.
+     */
+    private fun frame(points: List<GeoPoint>) {
+        if (points.isEmpty()) return
+        locationOverlay?.disableFollowLocation()
+        if (points.size < 2) {
+            b.map.controller.animateTo(points.first())
+            return
+        }
+        b.map.zoomToBoundingBox(BoundingBox.fromGeoPointsSafe(points), true, dp(32))
+    }
+
     private fun addWaypointHere() {
         val fix = locationOverlay?.myLocation
         val p = fix ?: b.map.mapCenter.let { GeoPoint(it.latitude, it.longitude) }
@@ -850,6 +1134,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             getString(R.string.waypoints) to { startActivity(Intent(this, WaypointsActivity::class.java)) },
             getString(R.string.tracks) to { startActivity(Intent(this, TracksActivity::class.java)) },
             getString(R.string.courses) to { courseLauncher.launch(Intent(this, CoursesActivity::class.java)) },
+            getString(R.string.import_gpx_all) to { importGpx.launch("*/*") },
             (if (TrackRecorder.isRecording) getString(R.string.stop_recording)
              else getString(R.string.start_recording)) to { toggleRecording() },
             (getString(R.string.rotate_map) + if (rotateWithHeading) "  ✓" else "") to { toggleRotation() }
@@ -862,6 +1147,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             entries.add(getString(R.string.stop_course) to {
                 CourseRunner.stop(); reloadCourseOverlays(); rebuildOverlays()
                 applyKeepScreenOn(); updateReadout()
+            })
+        }
+        if (hillshadeOn && reliefSource == ReliefSource.CLSS) {
+            entries.add(getString(R.string.download_clss) to {
+                downloadClssArea(b.map.boundingBox, "Vidno območje")
             })
         }
         entries.add(getString(R.string.download_area) to { showOfflineDialog() })
@@ -917,17 +1207,25 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val choices = intArrayOf(zoomMin + 1, zoomMin + 2, zoomMin + 3)
         val withRelief = hillshadeOn
 
+        // CLSS relief is not counted here: it is not tiles, and its size is reported in
+        // sheets when that download is offered.
+        val tileSources = if (withRelief && reliefSource == ReliefSource.GURS) 2 else 1
+
         val labels = choices.map { z ->
             val zMax = z.coerceAtMost(16)
-            val (tiles, bytes) = OfflineDownloader.estimate(box, zoomMin, zMax, if (withRelief) 2 else 1)
+            val (tiles, bytes) = OfflineDownloader.estimate(box, zoomMin, zMax, tileSources)
             "Do z%d — %d ploščic, ~%d MB".format(zMax, tiles, bytes / (1024 * 1024))
         }.toTypedArray()
 
         AlertDialog.Builder(this)
             .setTitle("Prenesi: $areaName")
             .setMessage(
-                if (withRelief) "Prenesel bom podlago in senčenje reliefa."
-                else "Prenesel bom samo podlago. Za relief ga najprej vklopite v Slojih."
+                when {
+                    withRelief && reliefSource == ReliefSource.CLSS ->
+                        "Prenesel bom podlago, nato pa še liste CLSS reliefa."
+                    withRelief -> "Prenesel bom podlago in senčenje reliefa."
+                    else -> "Prenesel bom samo podlago. Za relief ga najprej vklopite v Slojih."
+                }
             )
             .setItems(labels) { _, which ->
                 startDownload(box, areaName, zoomMin, choices[which].coerceAtMost(16), withRelief)
@@ -944,7 +1242,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         withRelief: Boolean
     ) {
         val sources = mutableListOf(currentLayer.label to currentLayer.source)
-        if (withRelief) sources.add("relief" to MapLayers.HILLSHADE)
+        // Only the WMS relief can be pre-fetched as tiles. CLSS is stored as whole sheets
+        // instead, so it follows once the base map is down rather than riding along.
+        if (withRelief && reliefSource == ReliefSource.GURS) {
+            sources.add("relief" to MapLayers.HILLSHADE)
+        }
 
         val dialog = AlertDialog.Builder(this)
             .setTitle("Prenašam…").setMessage("Pripravljam.").setCancelable(false).create()
@@ -971,6 +1273,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     )
                 )
                 Toast.makeText(this@MainActivity, "Prenos končan.", Toast.LENGTH_LONG).show()
+                if (withRelief && reliefSource == ReliefSource.CLSS) {
+                    downloadClssArea(box, areaName)
+                }
             }
             override fun onFailed(reason: String) {
                 dialog.dismiss()
@@ -984,7 +1289,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             .setTitle(R.string.app_name)
             .setMessage(
                 "Kartografske podlage: © Geodetska uprava RS, CC BY 4.0.\n" +
-                    "Senčenje reliefa iz lidarskih podatkov GURS.\n" +
+                    "Senčenje reliefa: lidar 2011–2014 (državna storitev) ali " +
+                    "ciklično lasersko skeniranje 2023–25 (clss.si). Oboje © GURS, CC BY 4.0.\n" +
                     "OpenTopoMap: CC-BY-SA, podatki © OpenStreetMap.\n\n" +
                     "DTK 25 se javno ne streže več — uvozite jo kot lastno karto.\n\n" +
                     "Dolg pritisk na karto doda točko."
@@ -1067,7 +1373,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
         heading?.let { bits.add("smer %.0f°".format(it)) }
         bits.add(activeLayerLabel())
-        if (hillshadeOn) bits.add("relief")
+        // Naming the scan rather than just "relief": the two look different on the ground,
+        // and knowing which one is drawn is the difference between trusting a feature and
+        // wondering whether it is simply out of date.
+        if (hillshadeOn) bits.add("relief ${reliefSource.label}")
         if (nightMode) bits.add("noč")
         activeCustomMap?.let { bits.add("+ ${it.name}") }
         b.txtStatus.text = bits.joinToString("  ·  ")
@@ -1197,6 +1506,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         // Any of these can have changed while the user was in another screen.
         loadCustomOverlay()
         reloadWaypointMarkers()
+        reloadShownTracks()
         reloadCourseOverlays()
         TrackRecorder.active?.let { t ->
             trackLine?.setPoints(t.points.map { GeoPoint(it.lat, it.lon) })
@@ -1232,6 +1542,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         const val KEY_ACTIVE_MAP = "active_map_id"
         const val KEY_COORD_FORMAT = "coord_format"
         const val KEY_HILLSHADE = "hillshade_on"
+        const val KEY_RELIEF_SOURCE = "relief_source"
+        /** Ids of saved tracks drawn on the map, shared with the tracks screen. */
+        const val KEY_SHOWN_TRACKS = "shown_track_ids"
+        const val KEY_CLSS_EXPLAINED = "clss_explained"
         const val KEY_HILLSHADE_STRENGTH = "hillshade_strength"
         const val KEY_HILLSHADE_CONTRAST = "hillshade_contrast"
         const val KEY_HILLSHADE_BRIGHTNESS = "hillshade_brightness"

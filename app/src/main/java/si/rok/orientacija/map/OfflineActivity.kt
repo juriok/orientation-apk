@@ -52,10 +52,18 @@ class OfflineActivity : AppCompatActivity() {
         items.sortByDescending { it.createdAt }
         b.txtEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
 
+        // CLSS relief is counted alongside the tiles: it is stored as sheets in our own
+        // directory rather than in osmdroid's database, and a figure that quietly omitted
+        // a few hundred megabytes of it would be worse than no figure at all.
         val used = OfflineDownloader.cacheUsage()
-        b.toolbar.title = if (used >= 0) {
-            "%s · %.0f MB".format(getString(R.string.offline), used / 1024.0 / 1024.0)
-        } else getString(R.string.offline)
+        val relief = ClssSheets.storedBytes(this)
+        b.toolbar.title = when {
+            used >= 0 && relief > 0 -> "%s · %.0f MB + %.0f MB CLSS".format(
+                getString(R.string.offline), used / 1024.0 / 1024.0, relief / 1024.0 / 1024.0
+            )
+            used >= 0 -> "%s · %.0f MB".format(getString(R.string.offline), used / 1024.0 / 1024.0)
+            else -> getString(R.string.offline)
+        }
 
         val fmt = SimpleDateFormat("d.M.yyyy", Locale.getDefault())
         b.list.adapter = object : ArrayAdapter<OfflinePack>(
@@ -126,16 +134,24 @@ class OfflineActivity : AppCompatActivity() {
      * Offered separately because the pack list only knows about deliberate downloads.
      */
     private fun confirmPurge() {
+        val relief = ClssSheets.storedBytes(this)
         AlertDialog.Builder(this)
             .setTitle(R.string.purge_cache)
             .setMessage(
                 "Počisti celoten predpomnilnik ploščic, tudi tiste, ki so se shranile med " +
-                    "običajno uporabo. Karte se bodo znova prenesle, ko boste imeli signal."
+                    "običajno uporabo. Karte se bodo znova prenesle, ko boste imeli signal." +
+                    if (relief > 0) {
+                        "\n\nZbrisal bom tudi shranjene liste CLSS reliefa " +
+                            "(%.0f MB), ki se prenašajo počasneje kot karte.".format(
+                                relief / 1024.0 / 1024.0
+                            )
+                    } else ""
             )
             .setPositiveButton(R.string.ok) { _, _ ->
                 val ok = runCatching {
                     org.osmdroid.tileprovider.modules.SqlTileWriter().purgeCache()
                 }.getOrDefault(false)
+                ClssSheets.clearStored(this)
                 store.save(emptyList())
                 refresh()
                 Toast.makeText(

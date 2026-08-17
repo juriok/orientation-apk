@@ -10,7 +10,7 @@ import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
-import org.osmdroid.tileprovider.MapTileProviderBasic
+import org.osmdroid.tileprovider.MapTileProviderBase
 import org.osmdroid.views.overlay.TilesOverlay
 
 /**
@@ -26,14 +26,21 @@ import org.osmdroid.views.overlay.TilesOverlay
  * stretched for contrast.
  *
  * Every tone decision is anchored on the raster's measured distribution rather than on
- * mid-grey: sampled across flat, hilly and alpine ground it runs p5 = 84, median = 177,
- * p95 = 236. It is a bright image, and treating it as if it were centred on 128 pushes most
- * of every tile to white, which for MULTIPLY means no effect at all.
+ * mid-grey. The two lidar scans are not interchangeable here: sampled across flat, hilly
+ * and alpine ground the 2011-2014 shading runs p5 = 84, median = 177, p95 = 236, while the
+ * CLSS shading is centred near 126 with a far wider spread. Anchoring either on the other's
+ * numbers is plainly wrong — read CLSS as if it were the old raster and flat ground comes
+ * out at half brightness, greying the whole map; read the old raster as if it were CLSS and
+ * the shading all but disappears. Hence [tones].
  */
 class HillshadeOverlay(
     context: Context,
-    provider: MapTileProviderBasic
+    provider: MapTileProviderBase
 ) : TilesOverlay(provider, context) {
+
+    /** Where this raster's tones sit, which is a property of the scan, not of the map. */
+    var tones: Tones = Tones.GURS_2011
+        set(value) { field = value; refreshPaint() }
 
     /** Overall effect, 0-255. Over a map this is shading depth; alone it is opacity. */
     var strength: Int = DEFAULT_STRENGTH
@@ -93,7 +100,7 @@ class HillshadeOverlay(
     private fun blendedCurve(slope: Float, lift: Float): ColorMatrix {
         val k = strength / 255f
         val scale = k * slope
-        val offset = k * (255f + lift - slope * FULLY_LIT) + (1f - k) * 255f
+        val offset = k * (255f + lift - slope * tones.fullyLit) + (1f - k) * 255f
         return ColorMatrix(
             floatArrayOf(
                 scale, 0f, 0f, 0f, offset,
@@ -110,7 +117,7 @@ class HillshadeOverlay(
      * natively occupies only 84-236.
      */
     private fun standaloneCurve(slope: Float, lift: Float): ColorMatrix {
-        val offset = MID_TARGET + lift - slope * MEDIAN
+        val offset = tones.midTarget + lift - slope * tones.median
         return ColorMatrix(
             floatArrayOf(
                 slope, 0f, 0f, 0f, offset,
@@ -133,14 +140,34 @@ class HillshadeOverlay(
         }
     }
 
-    companion object {
-        /** 95th percentile of the relief raster: treated as fully lit, so left unshaded. */
-        private const val FULLY_LIT = 236f
-        /** Measured median across flat, hilly and alpine ground. */
-        private const val MEDIAN = 177f
-        /** Where the median lands when viewing relief alone: light, with headroom. */
-        private const val MID_TARGET = 172f
+    /**
+     * The three numbers that describe one shading raster's tones.
+     *
+     * @param fullyLit the value treated as unshaded ground. Under MULTIPLY this maps to
+     *   white, the blend's identity, so it is the level at which the map shows through
+     *   untouched and everything darker starts to darken it.
+     * @param median measured middle of the raster, the point the contrast stretch turns about.
+     * @param midTarget where that middle should land when the relief is shown on its own.
+     */
+    class Tones(val fullyLit: Float, val median: Float, val midTarget: Float) {
+        companion object {
+            /**
+             * The 2011-2014 national shading: a bright image whose flats sit near white, so
+             * the unshaded level is its 95th percentile.
+             */
+            val GURS_2011 = Tones(fullyLit = 236f, median = 177f, midTarget = 172f)
 
+            /**
+             * CLSS 2023-25, which is rendered around mid-grey instead: flat ground measures
+             * about 126 and lit slopes run to 240. The unshaded level is therefore just
+             * above the flat-ground value rather than at the top of the range — taking the
+             * 95th percentile here would darken level ground by half.
+             */
+            val CLSS_2023 = Tones(fullyLit = 132f, median = 126f, midTarget = 158f)
+        }
+    }
+
+    companion object {
         const val DEFAULT_STRENGTH = 230
         const val DEFAULT_BRIGHTNESS = 50
         const val DEFAULT_CONTRAST = 45
