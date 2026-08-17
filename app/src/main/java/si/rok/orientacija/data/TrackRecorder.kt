@@ -118,10 +118,10 @@ class TrackRecordingService : Service(), LocationListener {
         }
         val lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         locationManager = lm
-        // The same providers the map listens to, and every fix they produce: thinning the
+        // The same providers the map listens to, asked for in the same way: thinning the
         // stream here would leave the filter fewer samples to average the noise out of.
         for (provider in LocationSources.available(lm)) {
-            runCatching { lm.requestLocationUpdates(provider, 0L, 0f, this) }
+            LocationSources.requestHighAccuracy(lm, provider, this)
         }
     }
 

@@ -1,6 +1,9 @@
 package si.rok.orientacija.geo
 
+import android.annotation.SuppressLint
+import android.location.LocationListener
 import android.location.LocationManager
+import android.location.LocationRequest
 import android.os.Build
 
 /**
@@ -28,4 +31,33 @@ object LocationSources {
         val present = runCatching { lm.allProviders }.getOrDefault(emptyList())
         return wanted.filter { it in present }
     }
+
+    /**
+     * Subscribes to one provider, asking for the best fix it can manage.
+     *
+     * From Android 12 the request can say so outright. Without it the platform is free to
+     * trade accuracy for battery — reasonably, for an app checking which city you are in,
+     * but not for one you are navigating off. Below 12 there is no such control and the
+     * plain call is the whole of what can be asked for.
+     *
+     * Zero interval and zero distance either way: every fix the receiver produces is
+     * another sample for the filter to average the noise out of, and throwing some away to
+     * save power would only make the position worse.
+     */
+    @SuppressLint("MissingPermission")
+    fun requestHighAccuracy(
+        lm: LocationManager,
+        provider: String,
+        listener: LocationListener
+    ): Boolean = runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val request = LocationRequest.Builder(0L)
+                .setQuality(LocationRequest.QUALITY_HIGH_ACCURACY)
+                .setMinUpdateIntervalMillis(0L)
+                .build()
+            lm.requestLocationUpdates(provider, request, { it.run() }, listener)
+        } else {
+            lm.requestLocationUpdates(provider, 0L, 0f, listener)
+        }
+    }.isSuccess
 }

@@ -150,8 +150,15 @@ Two safeguards sit behind that number:
 - **Steadied GPS** — fixes coarser than the estimate already held are rejected rather than
   averaged in, so a cell-tower fix cannot throw the marker across the valley; the rest go
   through a Kalman filter whose process noise follows your speed, so the marker sits still
-  when you do and keeps up when you move. The `± m` readout is the filter's own variance.
-  See `geo/LocationSmoother.kt`.
+  when you do and keeps up when you move. Simulated against 5 m fixes, standing still goes
+  from 7.1 m RMS wander to 1.7 m, and realistic orienteering movement from 7.1 m to 4.6 m.
+  The `± m` readout is the filter's own variance. See `geo/LocationSmoother.kt`.
+- **Altitude above sea level, not above the ellipsoid** — `Location.getAltitude()` returns
+  height above WGS84, and over Slovenia sea level sits 44–50 m above that, so raw GPS
+  altitude reads ~47 m high: 2913 m on Triglav rather than 2864 m. Corrected with EGM2008
+  tabulated on a 0.125° grid (max 0.27 m error against the full model), everywhere the app
+  reports a height — readout, waypoints, recorded tracks, exported GPX.
+  See `geo/Geoid.kt`.
 - **Track recording** — runs in a foreground service so it keeps logging with the screen
   off and the phone pocketed. Autosaves every 20 points, so a killed process costs seconds
   rather than the whole run. Distance and ascent filter GPS jitter rather than summing it.
@@ -206,6 +213,7 @@ geo/Transform2D.kt        control-point fitting: similarity / affine / homograph
 geo/CoordinateSystems.kt  D96/TM, D48/GK, UTM 33N, MGRS
 geo/GeoMath.kt            Web Mercator, distance, bearing
 geo/LocationSmoother.kt   outlier rejection and Kalman filtering of GPS fixes
+geo/Geoid.kt              EGM2008 table: ellipsoidal height -> height above sea level
 map/MapLayers.kt          WMS-as-XYZ tile sources, and the choice of relief scan
 map/ClssSheets.kt         fetches and caches CLSS 1 km shading sheets
 map/ClssRelief.kt         reprojects those sheets into Web Mercator tiles

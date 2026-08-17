@@ -104,7 +104,13 @@ class LocationSmoother {
         // Process noise: how far the position could have drifted since the last fix. Taken
         // from the receiver's own speed where it has one, so the filter is loose while
         // moving and tight while still, with a floor so it never stops adapting entirely.
-        val speed = if (fix.hasSpeed() && fix.speed > 0f) fix.speed.toDouble() else WALKING_SPEED
+        //
+        // A reported speed of exactly zero is believed, and is the whole point: standing
+        // still is when the filter should tighten hardest. Only a fix that carries no speed
+        // at all falls back to assuming a walk. Treating a reported zero as "unknown"
+        // instead loosened the filter precisely when it should have clamped down, and cost
+        // a third of the achievable accuracy at a standstill.
+        val speed = if (fix.hasSpeed()) fix.speed.toDouble() else WALKING_SPEED
         val drift = max(speed, MIN_DRIFT_SPEED)
         variance += drift * drift * secondsSinceLast
 
@@ -127,14 +133,27 @@ class LocationSmoother {
     }
 
     /**
-     * The steadied fix, carrying everything else through unchanged: altitude, speed and
-     * bearing are the receiver's own and are not ours to reinterpret. The accuracy is
-     * replaced, because after filtering it is genuinely no longer the fix's accuracy.
+     * The steadied fix. Speed and bearing are the receiver's own and are not ours to
+     * reinterpret, but two fields are corrected here so that every part of the app reads
+     * the same numbers:
+     *
+     *  * **accuracy**, because after filtering it is genuinely no longer the fix's own;
+     *  * **altitude**, converted from height above the ellipsoid — which is what the
+     *    platform reports — to height above sea level, which is what a map, a summit sign
+     *    and a person all mean by altitude. Over Slovenia that is a correction of about
+     *    47 m, so it is not a refinement but the difference between right and wrong.
+     *
+     * Doing it here rather than at each place that reads an altitude is deliberate: this is
+     * the single gate every fix in the app passes through, so there is nowhere for an
+     * uncorrected value to leak out and disagree with the rest.
      */
     private fun publish(fix: Location): Location = Location(fix).apply {
         latitude = lat
         longitude = lon
         accuracy = accuracyMetres
+        if (fix.hasAltitude()) {
+            altitude = Geoid.toSeaLevel(fix.altitude, lat, lon)
+        }
     }
 
     private fun distanceTo(otherLat: Double, otherLon: Double): Double {

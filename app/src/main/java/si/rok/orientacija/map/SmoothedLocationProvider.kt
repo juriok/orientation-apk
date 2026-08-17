@@ -10,6 +10,7 @@ import android.os.Bundle
 import androidx.core.content.ContextCompat
 import org.osmdroid.views.overlay.mylocation.IMyLocationConsumer
 import org.osmdroid.views.overlay.mylocation.IMyLocationProvider
+import si.rok.orientacija.geo.Geoid
 import si.rok.orientacija.geo.LocationSmoother
 import si.rok.orientacija.geo.LocationSources
 
@@ -53,9 +54,7 @@ class SmoothedLocationProvider(context: Context) : IMyLocationProvider, Location
             // Ask for everything the receiver produces and filter here. Letting the platform
             // thin the stream by time or distance would only hand the filter fewer, equally
             // noisy samples to work with.
-            subscribed = runCatching {
-                lm.requestLocationUpdates(provider, 0L, 0f, this)
-            }.isSuccess || subscribed
+            subscribed = LocationSources.requestHighAccuracy(lm, provider, this) || subscribed
         }
         if (!subscribed) return false
 
@@ -81,7 +80,17 @@ class SmoothedLocationProvider(context: Context) : IMyLocationProvider, Location
 
         // The most accurate of them, not merely the most recent: a fresh cell fix is worth
         // less than a satellite fix from a few minutes ago.
-        candidates.minByOrNull { it.accuracy }?.let { publish(it) }
+        val best = candidates.minByOrNull { it.accuracy } ?: return
+        // This one fix does not pass through the filter, so its altitude has to be put on
+        // the same footing here — otherwise the readout would show a height 47 m out for
+        // the few seconds before the first real fix corrects it.
+        publish(
+            Location(best).apply {
+                if (best.hasAltitude()) {
+                    altitude = Geoid.toSeaLevel(best.altitude, best.latitude, best.longitude)
+                }
+            }
+        )
     }
 
     override fun onLocationChanged(location: Location) {

@@ -138,6 +138,11 @@ Sprejemnik vsako sekundo izračuna novo lego in odgovor niha za nekaj metrov, tu
 </ul>
 Zapis <i>± m</i> v plošči kaže natančnost po glajenju, zato se ob mirovanju postopoma izboljšuje in se poslabša, ko točk nekaj časa ni. Enako glajenje uporablja tudi snemanje sledi, zato mirovanje ne nariše več klobčiča.
 
+<h3>Nadmorska višina</h3>
+Sprejemnik ne meri morske gladine, ampak višino nad matematičnim elipsoidom WGS84. Nad Slovenijo gladina morja leži <b>44 do 50 m višje od elipsoida</b>, zato surova GPS višina kaže približno 47 m preveč — na Triglavu okoli 2913 m namesto 2864 m.<br><br>
+Aplikacija to popravi z modelom geoida EGM2008, vgrajenim za Slovenijo in soseščino, tako da se prikazana višina ujema z višino na karti (odstopanje modela je pod 0,3 m). Popravek velja povsod, kjer aplikacija pokaže višino: v plošči, pri shranjenih točkah in v posnetih sledeh, torej tudi v izvoženem GPX.<br><br>
+Uradne slovenske višine (SVS2010, mareograf Koper) se od EGM2008 razlikujejo za nekaj deset centimetrov, kar je precej manj od natančnosti višine, ki jo telefon sploh zmore.
+
 <h3>Dobro je vedeti</h3>
 Relief se prikaže od približno z11 navzgor. Strežnik za relief prvo zahtevo pogosto zavrne in jo takoj zatem postreže, zato se kakšna ploščica pojavi z zamudo sekunde ali dveh.<br><br>
 DTK 25 se javno ne streže več — zadnje različice so iz leta 1996 v starem sistemu D48/GK. Če imate liste kot slike, jih uvozite med lastne karte.<br><br>
