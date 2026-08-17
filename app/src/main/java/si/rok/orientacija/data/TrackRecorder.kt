@@ -18,6 +18,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import si.rok.orientacija.MainActivity
 import si.rok.orientacija.R
+import si.rok.orientacija.geo.LocationSmoother
+import si.rok.orientacija.geo.LocationSources
 
 /**
  * Shared recording state.
@@ -87,6 +89,15 @@ class TrackRecordingService : Service(), LocationListener {
     private val store by lazy { TrackStore(this) }
     private var sinceLastSave = 0
 
+    /**
+     * The recorder filters its own stream rather than reading the map's.
+     *
+     * The two run at different times — recording continues with the activity gone — so they
+     * cannot share one filter, but they must behave the same way, or a track would come out
+     * jagged in exactly the places the map looked steady.
+     */
+    private val smoother = LocationSmoother()
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -107,20 +118,16 @@ class TrackRecordingService : Service(), LocationListener {
         }
         val lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         locationManager = lm
-        try {
-            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0f, this)
-        } catch (e: Exception) {
-            // GPS unavailable on this device or disabled; the network provider below may
-            // still yield something usable.
-        }
-        try {
-            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000L, 0f, this)
-        } catch (e: Exception) {
+        // The same providers the map listens to, and every fix they produce: thinning the
+        // stream here would leave the filter fewer samples to average the noise out of.
+        for (provider in LocationSources.available(lm)) {
+            runCatching { lm.requestLocationUpdates(provider, 0L, 0f, this) }
         }
     }
 
     override fun onLocationChanged(location: Location) {
-        if (!TrackRecorder.record(location)) return
+        val steadied = smoother.accept(location) ?: return
+        if (!TrackRecorder.record(steadied)) return
         // Periodic autosave: if the process is killed mid-run the track survives to the
         // last checkpoint instead of vanishing entirely.
         if (++sinceLastSave >= SAVE_EVERY_N_POINTS) {

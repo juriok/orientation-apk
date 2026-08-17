@@ -48,7 +48,6 @@ import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.ScaleBarOverlay
 import org.osmdroid.views.overlay.compass.CompassOverlay
 import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider
-import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import si.rok.orientacija.custom.CalibratedMapOverlay
 import si.rok.orientacija.custom.CustomMap
@@ -85,6 +84,7 @@ import si.rok.orientacija.map.OfflineDownloader
 import si.rok.orientacija.map.OfflinePack
 import si.rok.orientacija.map.OfflinePackStore
 import si.rok.orientacija.map.ReliefSource
+import si.rok.orientacija.map.SmoothedLocationProvider
 import si.rok.orientacija.util.BitmapUtils
 import java.io.File
 import kotlin.math.abs
@@ -285,7 +285,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         )
         map.controller.setCenter(GeoPoint(lat, lon))
 
-        locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(this), map).apply {
+        // Our own provider rather than osmdroid's: see SmoothedLocationProvider for why raw
+        // fixes make the marker jump, and what is done about it.
+        locationOverlay = MyLocationNewOverlay(SmoothedLocationProvider(this), map).apply {
             val dm = resources.displayMetrics
             setPersonIcon(LocationMarkers.positionDot(dm))
             setDirectionIcon(LocationMarkers.directionArrow(dm))

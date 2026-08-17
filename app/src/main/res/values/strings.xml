@@ -129,6 +129,15 @@ Snemanje teče v ozadju, tudi ko je zaslon ugasnjen in je telefon v žepu. Sled 
 <b>Prenesi območje</b> shrani vidni izsek, <b>Prenesi območje lastne karte</b> pa točno tisto ozemlje, ki ga pokriva vaša umerjena karta. Če je relief vklopljen, se prenese skupaj s podlago.<br><br>
 V <b>Prenosih</b> vidite, kaj je shranjeno in koliko prostora zaseda, ter lahko posamezno območje izbrišete.
 
+<h3>Natančnost lokacije</h3>
+Sprejemnik vsako sekundo izračuna novo lego in odgovor niha za nekaj metrov, tudi če telefon mirno leži na skali. Aplikacija zato surovih točk ne riše neposredno:<br>
+<ul>
+<li><b>Grobe točke zavrže.</b> Lego, izračunano iz baznih postaj ali wifija, zna zgrešiti tudi za kilometer — take točke ne popravijo ničesar, zato se ne upoštevajo, dokler imamo svežo satelitsko lego.</li>
+<li><b>Preostale zgladi.</b> Nova točka se zlije s prejšnjo lego glede na to, kako natančni sta; ko stojite, se oznaka skoraj ne premakne, ko greste, pa sledi normalno.</li>
+<li><b>Pravi skok vseeno spusti skozi.</b> Če se lega res prestavi — na primer po izhodu iz predora — se filter po nekaj zaporednih točkah ponastavi.</li>
+</ul>
+Zapis <i>± m</i> v plošči kaže natančnost po glajenju, zato se ob mirovanju postopoma izboljšuje in se poslabša, ko točk nekaj časa ni. Enako glajenje uporablja tudi snemanje sledi, zato mirovanje ne nariše več klobčiča.
+
 <h3>Dobro je vedeti</h3>
 Relief se prikaže od približno z11 navzgor. Strežnik za relief prvo zahtevo pogosto zavrne in jo takoj zatem postreže, zato se kakšna ploščica pojavi z zamudo sekunde ali dveh.<br><br>
 DTK 25 se javno ne streže več — zadnje različice so iz leta 1996 v starem sistemu D48/GK. Če imate liste kot slike, jih uvozite med lastne karte.<br><br>
